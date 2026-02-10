@@ -176,9 +176,64 @@ GET /api/metrics/network  - 네트워크 I/O
 
 ---
 
+## [2026-02-10 15:30] Network Delta 계산 및 마우스 휠 기능 추가
+
+### 변경된 파일
+
+#### Frontend
+- `frontend/src/types/metrics.ts`: MetricDataPoint에 rawValue 필드 추가
+- `frontend/src/app/metrics/page.tsx`: 주요 변경
+  - Network Delta 계산 로직 추가 (누적 값 → 증가량)
+  - Network Sent/Recv 한 그래프에 통합 표시
+  - 마우스 휠 이벤트 핸들러 추가 (시간축 확대/축소)
+  - 의존성 배열 수정으로 휠 이벤트 버그 수정
+- `frontend/src/components/MetricsChart.tsx`: 다중 라인 지원
+  - data2, color2, dataKey1, dataKey2 props 추가
+  - 두 데이터셋 병합 로직 (mergedData)
+  - 각 라인별 Peak 계산 및 표시
+
+#### Documentation
+- `.claude/skills/function-system-metric-monitor/SKILL.md`:
+  - 마우스 휠 기능 설명 추가
+  - 완료 조건 체크리스트 업데이트 (모두 완료)
+- `.claude/docs/function-system-metric-monitor.md`:
+  - 마우스 휠 확대/축소 섹션 추가
+  - 개발 히스토리 업데이트 (3개 항목 추가)
+  - 완료 조건 체크리스트 확장
+
+### 작업 요약
+- ✅ **Network Delta 계산**: 누적 값 → 폴링 간격당 증가량 (MB/5s)
+  - rawValue에 누적 값 저장
+  - 이전 측정값과 비교하여 delta 계산
+  - 음수 방지 로직 (Math.max(0, ...))
+- ✅ **Network Sent/Recv 통합**: 한 그래프에 두 선 표시
+  - Sent: 빨간색 (#ef4444)
+  - Recv: 파란색 (#3b82f6)
+  - 각 라인별 Peak 표시 (position 분리)
+  - 총 4개 차트로 정리 (2x2 그리드)
+- ✅ **마우스 휠 확대/축소**: 그래프 영역에서 시간축 조절
+  - 휠 위로: 시간 범위 30분씩 축소 (확대)
+  - 휠 아래로: 시간 범위 30분씩 확장 (축소)
+  - 범위 제한: 최소 30분 ~ 최대 24시간
+  - 드롭다운과 자동 동기화
+  - 이벤트 리스너 버그 수정 (의존성 배열)
+- ✅ **MetricsChart 컴포넌트 확장**: 다중 라인 지원
+  - 선택적 두 번째 라인 (data2)
+  - 두 데이터셋 timestamp 기준 병합
+  - 각 라인별 Peak 자동 계산
+
+---
+
 ## 다음 스텝
 - [x] Feature 1: 사용자 모델 및 스키마 구현
-- [x] 시스템 메트릭 모니터링 구현 (CPU, Memory, Disk, Network)
+- [x] 시스템 메트릭 모니터링 구현 완료
+  - [x] CPU, Memory, Disk, Network 모니터링
+  - [x] 폴링 간격 선택 (5초~60초)
+  - [x] 시간 범위 선택 (30분~24시간, 30분 단위)
+  - [x] 마우스 휠 확대/축소
+  - [x] Peak 시점 표시
+  - [x] Network Delta + Sent/Recv 통합
+  - [x] 24시간 히스토리 + LocalStorage
 - [ ] Feature 2: 회원가입 API 엔드포인트 (POST /api/auth/register)
 - [ ] Feature 3: 로그인 API + JWT 토큰 발급
 - [ ] Feature 4: 인증 미들웨어

@@ -275,6 +275,36 @@ export default function MetricsPage() {
   };
 
 
+  // 마우스 휠 이벤트 핸들러 - 시간축 확대/축소
+  useEffect(() => {
+    const container = document.querySelector('.graphs-container');
+    if (!container) {
+      console.log('graphs-container not found'); // 디버깅용
+      return;
+    }
+
+    console.log('Wheel event listener attached'); // 디버깅용
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault(); // 기본 스크롤 동작 방지
+      console.log('Wheel event:', e.deltaY); // 디버깅용
+
+      if (e.deltaY < 0) {
+        // 휠 위로: 시간 범위 축소 (확대) - 30분씩 감소
+        setViewWindowHours(prev => Math.max(0.5, prev - 0.5));
+      } else if (e.deltaY > 0) {
+        // 휠 아래로: 시간 범위 확장 (축소) - 30분씩 증가
+        setViewWindowHours(prev => Math.min(24, prev + 0.5));
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, [cpuHistory.length, memoryHistory.length, diskHistory.length, networkSentHistory.length, networkRecvHistory.length]);
+
   // 폴링 간격에 따라 주기적으로 데이터 가져오기
   useEffect(() => {
     fetchCPUMetrics(); // 초기 로드
@@ -376,7 +406,7 @@ export default function MetricsPage() {
           <div className="mt-3 text-xs text-gray-500 flex items-center gap-2">
             <span>💡</span>
             <span>
-              Tip: 시간 범위를 선택하여 그래프 기간 조정 |
+              Tip: 시간 범위를 선택하거나 그래프에서 마우스 휠로 조정 가능 |
               데이터는 최대 24시간 저장됨 |
               {restoredCount > 0 && ` LocalStorage에서 ${restoredCount}개 데이터 복원됨`}
             </span>
@@ -400,7 +430,7 @@ export default function MetricsPage() {
 
         {/* 차트 그리드 - 2열 (자동 행) */}
         {!loading && (cpuHistory.length > 0 || memoryHistory.length > 0 || diskHistory.length > 0 || networkSentHistory.length > 0 || networkRecvHistory.length > 0) && (
-          <div className="grid grid-cols-2 gap-6">
+          <div className="graphs-container grid grid-cols-2 gap-6">
             {/* CPU 차트 */}
             {cpuHistory.length > 0 && (
               <MetricsChart
@@ -434,25 +464,18 @@ export default function MetricsPage() {
               />
             )}
 
-            {/* Network 차트 - 송신 (Delta) */}
-            {networkSentHistory.length > 0 && (
+            {/* Network 차트 - Sent + Recv 통합 */}
+            {(networkSentHistory.length > 0 || networkRecvHistory.length > 0) && (
               <MetricsChart
                 data={getFilteredData(networkSentHistory)}
-                title={`Network Sent (MB/${pollingInterval / 1000}s)`}
-                color="#ef4444"
-                unit="MB"
+                data2={getFilteredData(networkRecvHistory)}
+                title={`Network Traffic (MB/${pollingInterval / 1000}s)`}
+                color="#ef4444"          // Sent: 빨간색
+                color2="#3b82f6"         // Recv: 파란색
+                unit=" MB"
                 yDomain={[0, 'auto']}
-              />
-            )}
-
-            {/* Network 차트 - 수신 (Delta) */}
-            {networkRecvHistory.length > 0 && (
-              <MetricsChart
-                data={getFilteredData(networkRecvHistory)}
-                title={`Network Recv (MB/${pollingInterval / 1000}s)`}
-                color="#8b5cf6"
-                unit="MB"
-                yDomain={[0, 'auto']}
+                dataKey1="Sent"
+                dataKey2="Recv"
               />
             )}
           </div>
