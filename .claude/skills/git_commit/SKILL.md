@@ -1,5 +1,5 @@
 ---
-name: git-commit-workflow
+name: git_commit
 description: Git commit 시 progress.md 업데이트, task.md 최신화, git add/commit/push를 순차적으로 수행하는 워크플로우. 사용자가 "커밋해줘", "git commit", "작업 저장", "푸시해줘" 등 git commit 관련 요청을 할 때 트리거.
 ---
 

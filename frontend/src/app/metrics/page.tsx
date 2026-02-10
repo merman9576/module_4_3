@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import MetricsChart from '@/components/MetricsChart';
 import { MetricDataPoint, CPUMetrics, MemoryMetrics, DiskMetrics, NetworkMetrics } from '@/types/metrics';
 import Link from 'next/link';
@@ -32,6 +32,9 @@ export default function MetricsPage() {
   const [viewWindowHours, setViewWindowHours] = useState<number>(2); // 기본값: 2시간 (0.5 = 30분 지원)
   const [dataPointCount, setDataPointCount] = useState<number>(0); // 배치 저장용 카운터
   const [restoredCount, setRestoredCount] = useState<number>(0); // 복원된 데이터 개수
+
+  // 그래프 컨테이너 ref (마우스 휠 이벤트용)
+  const graphsContainerRef = useRef<HTMLDivElement>(null);
 
   // LocalStorage에서 데이터 복원
   useEffect(() => {
@@ -115,15 +118,41 @@ export default function MetricsPage() {
     return () => clearInterval(saveInterval);
   }, [cpuHistory, memoryHistory, diskHistory, networkSentHistory, networkRecvHistory]);
 
-  // 뷰 윈도우 필터링 (메모이제이션)
-  const getFilteredData = useMemo(() => {
-    return (data: MetricDataPoint[]) => {
-      const now = Date.now();
-      const windowMs = viewWindowHours * 60 * 60 * 1000;
-      const cutoff = now - windowMs;
-      return data.filter(p => p.timestamp >= cutoff);
-    };
-  }, [viewWindowHours]);
+  // 각 메트릭별 필터링된 데이터 (시간 범위에 따라)
+  const filteredCpuData = useMemo(() => {
+    const now = Date.now();
+    const windowMs = viewWindowHours * 60 * 60 * 1000;
+    const cutoff = now - windowMs;
+    return cpuHistory.filter(p => p.timestamp >= cutoff);
+  }, [cpuHistory, viewWindowHours]);
+
+  const filteredMemoryData = useMemo(() => {
+    const now = Date.now();
+    const windowMs = viewWindowHours * 60 * 60 * 1000;
+    const cutoff = now - windowMs;
+    return memoryHistory.filter(p => p.timestamp >= cutoff);
+  }, [memoryHistory, viewWindowHours]);
+
+  const filteredDiskData = useMemo(() => {
+    const now = Date.now();
+    const windowMs = viewWindowHours * 60 * 60 * 1000;
+    const cutoff = now - windowMs;
+    return diskHistory.filter(p => p.timestamp >= cutoff);
+  }, [diskHistory, viewWindowHours]);
+
+  const filteredNetworkSentData = useMemo(() => {
+    const now = Date.now();
+    const windowMs = viewWindowHours * 60 * 60 * 1000;
+    const cutoff = now - windowMs;
+    return networkSentHistory.filter(p => p.timestamp >= cutoff);
+  }, [networkSentHistory, viewWindowHours]);
+
+  const filteredNetworkRecvData = useMemo(() => {
+    const now = Date.now();
+    const windowMs = viewWindowHours * 60 * 60 * 1000;
+    const cutoff = now - windowMs;
+    return networkRecvHistory.filter(p => p.timestamp >= cutoff);
+  }, [networkRecvHistory, viewWindowHours]);
 
   // CPU 메트릭 가져오기
   const fetchCPUMetrics = async () => {
@@ -277,24 +306,32 @@ export default function MetricsPage() {
 
   // 마우스 휠 이벤트 핸들러 - 시간축 확대/축소
   useEffect(() => {
-    const container = document.querySelector('.graphs-container');
+    const container = graphsContainerRef.current;
     if (!container) {
-      console.log('graphs-container not found'); // 디버깅용
+      console.log('graphs-container ref not available'); // 디버깅용
       return;
     }
 
-    console.log('Wheel event listener attached'); // 디버깅용
+    console.log('Wheel event listener attached to ref'); // 디버깅용
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault(); // 기본 스크롤 동작 방지
-      console.log('Wheel event:', e.deltaY); // 디버깅용
+      console.log('Wheel event detected:', e.deltaY); // 디버깅용
 
       if (e.deltaY < 0) {
         // 휠 위로: 시간 범위 축소 (확대) - 30분씩 감소
-        setViewWindowHours(prev => Math.max(0.5, prev - 0.5));
+        setViewWindowHours(prev => {
+          const newValue = Math.max(0.5, prev - 0.5);
+          console.log('Zoom in: ', prev, '->', newValue);
+          return newValue;
+        });
       } else if (e.deltaY > 0) {
         // 휠 아래로: 시간 범위 확장 (축소) - 30분씩 증가
-        setViewWindowHours(prev => Math.min(24, prev + 0.5));
+        setViewWindowHours(prev => {
+          const newValue = Math.min(24, prev + 0.5);
+          console.log('Zoom out:', prev, '->', newValue);
+          return newValue;
+        });
       }
     };
 
@@ -302,8 +339,9 @@ export default function MetricsPage() {
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
+      console.log('Wheel event listener removed'); // 디버깅용
     };
-  }, [cpuHistory.length, memoryHistory.length, diskHistory.length, networkSentHistory.length, networkRecvHistory.length]);
+  }, [loading]); // loading이 false가 되면 컨테이너가 렌더링됨
 
   // 폴링 간격에 따라 주기적으로 데이터 가져오기
   useEffect(() => {
@@ -430,11 +468,11 @@ export default function MetricsPage() {
 
         {/* 차트 그리드 - 2열 (자동 행) */}
         {!loading && (cpuHistory.length > 0 || memoryHistory.length > 0 || diskHistory.length > 0 || networkSentHistory.length > 0 || networkRecvHistory.length > 0) && (
-          <div className="graphs-container grid grid-cols-2 gap-6">
+          <div ref={graphsContainerRef} className="graphs-container grid grid-cols-2 gap-6">
             {/* CPU 차트 */}
             {cpuHistory.length > 0 && (
               <MetricsChart
-                data={getFilteredData(cpuHistory)}
+                data={filteredCpuData}
                 title="CPU Usage (%)"
                 color="#3b82f6"
                 unit="%"
@@ -445,7 +483,7 @@ export default function MetricsPage() {
             {/* Memory 차트 */}
             {memoryHistory.length > 0 && (
               <MetricsChart
-                data={getFilteredData(memoryHistory)}
+                data={filteredMemoryData}
                 title="Memory Usage (%)"
                 color="#10b981"
                 unit="%"
@@ -456,7 +494,7 @@ export default function MetricsPage() {
             {/* Disk 차트 */}
             {diskHistory.length > 0 && (
               <MetricsChart
-                data={getFilteredData(diskHistory)}
+                data={filteredDiskData}
                 title="Disk Usage (%)"
                 color="#f59e0b"
                 unit="%"
@@ -467,8 +505,8 @@ export default function MetricsPage() {
             {/* Network 차트 - Sent + Recv 통합 */}
             {(networkSentHistory.length > 0 || networkRecvHistory.length > 0) && (
               <MetricsChart
-                data={getFilteredData(networkSentHistory)}
-                data2={getFilteredData(networkRecvHistory)}
+                data={filteredNetworkSentData}
+                data2={filteredNetworkRecvData}
                 title={`Network Traffic (MB/${pollingInterval / 1000}s)`}
                 color="#ef4444"          // Sent: 빨간색
                 color2="#3b82f6"         // Recv: 파란색

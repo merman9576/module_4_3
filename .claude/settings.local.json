@@ -12,7 +12,9 @@
       "Bash(sqlite3:*)",
       "Bash(.venvScriptspython.exe -c \"from app.database import engine; from sqlalchemy import inspect; inspector = inspect\\(engine\\); tables = inspector.get_table_names\\(\\); print\\(''Tables:'', tables\\)\")",
       "Bash(test:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(timeout 5 .venv/Scripts/python:*)",
+      "Bash(timeout:*)"
     ]
   }
 }

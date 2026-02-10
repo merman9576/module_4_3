@@ -2,6 +2,7 @@
 name: kernel-agent
 description: Netfilter 기반 커널 모듈의 생성, 빌드 검증, 분석을 수행한다. 커널 모듈 작성, 빌드, 코드 리뷰, BE 연동 명세 생성 요청 시 사용한다.
 tools: Read, Glob, Grep, Bash, Write, Edit
+color: gray
 skills:
   - KN-generate
   - KN-build-verify
