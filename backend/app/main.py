@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
-from app.routers import examples
+from app.routers import examples, metrics
 from app.models import User  # User 모델 import (테이블 생성 위해 필요)
 
 # 데이터베이스 테이블 생성
@@ -21,6 +21,7 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(examples.router)
+app.include_router(metrics.router)
 
 
 @app.get("/api/health")

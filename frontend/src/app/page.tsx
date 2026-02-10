@@ -59,6 +59,18 @@ export default function Home() {
           )}
         </div>
 
+        <div className="border-t pt-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            시스템 모니터링
+          </h2>
+          <Link
+            href="/metrics"
+            className="block w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition text-center"
+          >
+            📊 System Metrics
+          </Link>
+        </div>
+
         <div className="border-t pt-6">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             사용자 인증

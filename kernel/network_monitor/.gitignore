@@ -1,0 +1,13 @@
+# 커널 모듈 빌드 파일
+*.o
+*.ko
+*.mod
+*.mod.c
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+
+# 에디터 임시 파일
+*~
+.*.swp
