@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh:*)",
+      "Bash(git:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(.venvScriptsactivate)",
+      "Bash(.venvScriptspython.exe -m pip install:*)",
+      "Bash(.venv/Scripts/python.exe -m pip:*)",
+      "Bash(timeout 5 .venv/Scripts/python.exe:*)",
+      "Bash(sqlite3:*)",
+      "Bash(.venvScriptspython.exe -c \"from app.database import engine; from sqlalchemy import inspect; inspector = inspect\\(engine\\); tables = inspector.get_table_names\\(\\); print\\(''Tables:'', tables\\)\")",
+      "Bash(test:*)",
+      "Bash(powershell:*)"
+    ]
+  }
+}
